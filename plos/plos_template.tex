@@ -2,11 +2,11 @@
 % Version 2.0 July 2014
 %
 % To compile to pdf, run:
-% latex plos.template
-% bibtex plos.template
-% latex plos.template
-% latex plos.template
-% dvipdf plos.template
+% latex plos_template.tex
+% bibtex plos_template.tex
+% latex plos_template.tex
+% latex plos_template.tex
+% dvipdf plos_template.tex
 %
 % % % % % % % % % % % % % % % % % % % % % %
 %
@@ -103,6 +103,9 @@
 %\usepackage{setspace} 
 %\doublespacing
 
+%TODO: remove for production
+\usepackage{graphicx}
+
 
 % Text layout
 \topmargin 0.0cm
@@ -140,25 +143,54 @@
 % Title must be 150 characters or less
 \begin{flushleft}
 {\Large
-\textbf{Metagenomic Assembly Validation of an in vitro mock community}
+    \textbf{Metagenomic Assembly Validation of an {\em in vitro} Mock Community}
 }
 % Insert Author names, affiliations and corresponding author email.
 \\
-Autho1$^{1}$, 
-Author2$^{2}$, 
-Author3$^{3,\ast}$
+Ino de Bruijn$^{1,2,\ast}$, 
+Johannes Alneberg$^{1}$, 
+Linda d'Amore,
+Neil Hall,
+Umer Z. Ijaz$^{3}$, 
+Christopher Quince$^{3}$, 
+Anders F. Andersson$^{1}$
 \\
-\bf{1} Author1 Dept/Program/Center, Institution Name, City, State, Country
+\bf{1} KTH Royal Institute of Technology, Science for Life Laboratoy, School of
+Biotechnology, Division of Gene Technology, Stockholm, Sweden
 \\
-\bf{2} Author2 Dept/Program/Center, Institution Name, City, State, Country
+\bf{2} BILS Bioinformatics Infrastructure for Life Sciences, Stockholm, Sweden
 \\
-\bf{3} Author3 Dept/Program/Center, Institution Name, City, State, Country
+\bf{3} University of Glasgow, Glasgow, UK
 \\
-$\ast$ E-mail: Corresponding author@institute.edu
+$\ast$ E-mail: Corresponding author ino@ino.pm
 \end{flushleft}
 
 % Please keep the abstract between 250 and 300 words
 \section*{Abstract}
+Single genome assembly algorithms have been benchmarked with real
+sequencing data in the assembly challenges Assemblethon and GAGE. The {\em de
+novo} metagenomic assembly algorithms have so far only been evaluated using
+similated reads. In this paper we present a benchmark using an {\em in vitro}
+mock community of 52 species with known reference genomes. The mock community
+was configured in two different abundance configurations: an even distribution
+and a log-normal distribution similar to distributions of phyla in soil. The
+communities were sequenced with Illumina HiSeq paired end mode. The data is
+openly available for other researchers to experiment on. Here, the reads have
+been used to test various assembly recipes i.e. a combination of Velvet,
+Meta-Velvet, Ray, Minimus2, Newbler and Bambus2 resulting in a total of
+twenty-one different assembly recipes. The assemblies are assessed on coverage of
+the reference genomes and the purity per contig.  Purity is a ratio based on
+the best alignment per contig as determined with MUMmer. We show that there are
+many impure contigs constructed, both for the even community and the log-normal
+community. There is a clear tradeoff between contig length and contig purity.
+Velvet performs best in terms of purity and coverage of the references, while
+Velvet or Ray followed by a kmer merging step with Minimus2 or Newbler gives
+the longest contigs covering the references with a minor decrease in purity. We
+furthermore show that a simple rule of thumb for obtaining pure contigs is
+selecting those with high coverage.
+%TODO: get right number of words, include references
+
+
 
 % Please keep the Author Summary between 150 and 200 words
 % Use first person. PLOS ONE authors please skip this step. 
@@ -168,26 +200,348 @@ $\ast$ E-mail: Corresponding author@institute.edu
 
 
 \section*{Introduction}
+Metagenomics, the sequencing of environmental DNA, has demonstrated to be a
+promising approach for the discovery and investigation of microbes that cannot
+be cultured in the laboratory \cite{Eisen17355177} as well as for the study of
+both free-living microbial communities \cite{Andersson18497291} and microbial
+communities inside other organisms \cite{Qin20203603,Hess21273488}.\\
 
 
+In a typical shotgun metagenomics experiment the DNA of a community is isolated
+and high throughput sequencing is performed on a random sample of the isolated
+DNA \cite{Morgan20419134}. The reads can either be analyzed as such, by e.g.
+blast searches against reference databases to obtain a functional profile of
+the microbial community \cite{Tringe15845853}, or they can be assembled to form
+longer stretches of DNA stemming from the same or closely related organisms
+that can subsequently be analyzed with regards to phylogenetic affiliation and
+functional properties. The output of the assembly process often includes
+scaffolds, contigs and unassembled reads \cite{Mavromatis17468765}. One of the
+problems with assembling is that chimeric contigs or scaffolds may be formed.
+Closely related sequences are more likely to form chimeras and since closely
+related strains often occur in the same environment this is a challenge. Also,
+it is difficult to determine whether the formation of a chimera is natural due
+to homologous recombination or an error in the assembly process
+\cite{Tyson14961025}. Another problem with assembly is variations in gene
+content among closely related strains, since a gene inserted in a subpopulaton
+will cause conflicting assembly results \cite{Hallam17114289}. After assembling
+the reads, a process called binning is performed, where the resulting scaffolds
+and contigs are assigned to phylogenetically related groups. Finally, gene
+calling and functional annotations are performed on the scaffolds.\\
+
+% rewrite upper part (maybe take some parts from theoretical background)
+
+In our studies several recipes for {\em de novo} assembly of metagenomic
+data have been evaluated. In an {\em in silico} performed comparison between
+Illumina, Sanger and 454 on cost of sequencing and resulting coverage of
+microbial communities, Illumina short read libraries were shown to be the best
+for communities of medium complexity \cite{Mende22384016}. Therefore we have
+chosen to assess the assembly recipes for Illumina paired short reads
+sepecifically.  In previous studies mostly {\em in silico} metagenomic data
+sets have been used \cite{Pignatelli21625384,Mavromatis17468765}. In contrast
+the community of our study is an {\em in vitro} simulated metagenome consisting
+of 52 species with completed or nearly completed genomes so the quality of our
+assesment is not dependent on the realisticness of read simulators. An even and
+uneven distribution of the 52 species were created {\em in vitro}. The community has
+been sequenced with different type of library preparations to be able to test
+the difference in library preparation as well.  The following assembly programs
+have been tested: Velvet \cite{Zerbino18349386}, Meta-Velvet \cite{MetaVelvet},
+Newbler \cite{Quinn18755037}, Minimus2 \cite{Sommer17324286}, Ray Meta
+\cite{Boisvert23259615} and Bambus2 \cite{Koren21926123}. The quality of the
+assemblies have been evaluated by mapping the constructed contigs or scaffolds
+to the collection of reference genomes, hereafter referred to as the reference
+metagenome. In addition two pipelines have been constructed, one to perform the
+assemblies and another to perform the validation given there is a reference
+metagenome available.\\
+
+% related work
+
+In a study by \cite{Mavromatis17468765} three genome assemblers were
+evaluated: Phrap \cite{delaBastide18428783}, Arachne \cite{Batzoglou11779843}
+and Jazz \cite{Aparicio12142439}. For the evaluation three artificial
+communities were constructed of low, medium and high complexity by selecting
+Sanger reads from 113 isolate genomes. The low complexity community had one
+dominating population with several low-abundance ones, the medium more than one
+dominating population and the complex community had no dominating population at
+all. Resulting contigs were evaluated on chimericity and length distribution.
+Compared to using the original reads for gene annotation, assembly was
+demonstrated to give up to 20\% increase in accurate gene prediction
+and a slightly better increase for inaccurate and missed genes. Sanger reads of
+700 bp were used. This approach of using artificial communities has
+subsequently been used in adapted versions by several other assembly evaluation
+papers \cite{Pignatelli21625384,Mende22384016}. In the benchmark by
+\cite{Pignatelli21625384} the reads of the artificial communities were changed
+from Sanger to 454 and Illumina. For the Illumina reads, SSAKE
+\cite{Warren17158514} and Velvet were used to perform the assembly. No
+difference in chimericity between using the simulated 454 reads or the Illumina
+reads was spotted. The main cause of chimericity was sequence similarity of the
+organisms, no relation with genome coverage was found. At the functional level
+metagenomic assembly turned out to be counterproductive compared to using the
+original reads for annotation. \cite{Mende22384016} used a metagenome of 10,
+100 and 400 species with simulated reads of Illumina, 454 and Sanger where the
+number of reads for each technology was based on sequencing cost. The
+sequencing cost was kept constant. All of the technologies provided similar
+coverage for 10 species. Illumina was superior for 100 species due to the
+higher coverage one can get for a similar price.  Sanger performed best for 400
+species because of longer read length. Sanger reads were assembled with
+Arachne; 454 reads with Celera \cite{Myers10731133} and Illumina reads with
+SOAPdenovo \cite{Li20019144}. Similar to the study of
+\cite{Pignatelli21625384} a year earlier, the authors concluded that assembly
+contigs improves functional annotation of the metagenome. Furthermore using
+Illumina paired end data to determine contig links and construct scaffolds,
+although introducing more chimerism, resulted in an even better functional
+annotation.  Beyond using simulated reads or real reads of {\em in silico}
+communities there has not been a comparison of assembly algorithms using an
+{\em in vitro} community yet. In vitro communities have been used previously
+with success to assess DNA extraction techniques for sequencing a low
+%TODO find number of genomes
+complexity community of nine bacterial genera \cite{Willner22514642}, an oral
+community \cite{Diaz22520388}, the human gut \cite{Wu20673359} and the human
+microbiome \cite{HMPC22699610}.  The advantage of using an {\em in vitro}
+community for assembly evaluation is that one does not have to rely on the
+correctness of sequencing simulators, the assessment can thus be as good as the
+similarity of the {\em in vitro } community to a real community.
+
+%Say something about GAGE and Assemblathon
 
 
 % You may title this section "Methods" or "Models". 
 % "Models" is not a valid title for PLoS ONE authors. However, PLoS ONE
 % authors may use "Analysis" 
 \section*{Materials and Methods}
+To determine the quality of metagenomic assembly a mock
+community of species with known genomes was constructed {\em in vitro} and
+sequenced with Illumina. The resulting reads have been assembled using a
+combination of Velvet, Meta-Velvet, Ray, Minimus2, Newbler and Bambus2 resulting in
+nineteen different assembly recipes (see Figure \ref{fig:asmstrat} and Table
+\ref{tab:asmstrat}). The recipes stem from current literature and our own
+ideas.
+
+\subsection*{Mock community} The sequenced mock community consisted of 59
+species. The species have been chosen such that there are a number of closely
+related organisms and more distant ones. The number of species is about equal
+to the number of species one would find in the human gut. The abundances of DNA
+from each species have been fixed in two types of configurations before
+sequencing. In the first configuration, the even configuration, all species
+have approximately equal genome copy numbers. In the second configuration, the
+uneven configuration, the phyla are mixed in proportions similar to log-normal
+distributions of phyla in soil \cite{Doroghazi18682841}. The samples have been
+prepared with the Nextera 1ng sample preparation kit. The entire reference
+metagenome's size is about 200Mb. Mock community preparations and sequencing
+were performed by our collaborators, Christopher Quince at University of
+Glasgow and Linda D'Amore and Neil Hall at Liverpool's Centre for Genomics
+Research. Sequencing of the even and uneven community resulted in about 7,9Gb
+and 6.7Gb respectively.
+
+\subsection*{Quality trimming} Before assembling the reads one often starts with
+pre-processing them by quality trimming and/or removing PCR duplicates.
+\cite{Mende22384016} demonstrated that quality trimming could drastically
+improve the assembly. Before each assembly the same quality trimming procedure
+has been performed. For quality trimming the program sickle was used (see Table
+\ref{tab:programversions}). Reads were trimmed from the 3' end if the average
+quality score was below 20 in a window of 10 bases. If the resulting read is
+shorter than 20 it is discarded. Only pairs are used in the subsequent
+assembly, not the single reads.
+
+\subsection*{Reference genome filtering} Some of the reference genomes were not
+similar enough to the genomes in the mock community for a fair comparison. We
+therefore selected only those references that had at least 90\% of the genome
+covered by pairs stemming from the community with even abundances per genome.
+The quality trimmed pairs that did not align properly against this subset of 52
+references were discarded. The references and their GID can be found in
+Supplementary Table S1. After filtering the pairs there were 3,8Gb and 3,1Gb
+left for the even and uneven community respectively.
+
+% The V3 (192 bp) and V4 (291 bp) of the 16S genes have been amplified and the samples have been sequenced with Illumina.
+
+
+\subsection*{Assembly} In the assembly procedure reads are combined into
+contiguous sequences called contigs. Contigs can afterwards be joined using
+paired read information into longer scaffolds. In the scaffolding process
+contigs might be extended and repeats might be solved so scaffolding is not
+restricted to just the ordering of contigs.\\
+
+
+There are a plethora of different assemblers available and by pre-processing
+reads and combining different assemblers an even larger amount of assembly
+recipies is possible. Velvet is one of the most used assembly programs and
+was therefore included in this assessment. Velvet's metagenomic counterpart,
+Meta-Velvet, is performed after executing Velvet so it is possible to determine
+how the metagenomic specific parameters improve the assembly. Another popular
+assembler for metagenomics is Ray \cite{Boisvert23259615}. Ray is based on MPI
+and is runnable over multiple nodes distributing both memory and processor
+load, which makes it an ideal candidate for large metagenomic projects.\\
+
+
+\subsection*{Contiging}
+Velvet, Ray and Meta-Velvet all use a de Bruijn graph to determine overlaps
+between reads. This involves cutting up the reads in sizes of a specified kmer
+size and let edges represent overlaps between kmers i.e. ($k+1$)mers. This way
+the graph, or the computational requirements, grow with the number of unique
+kmers in the library instead of the number of reads. For a more elaborate
+description of de Bruijn Graphs for sequence assembly see
+\cite{Miller20211242}. The resulting contigs are constructed by following paths
+in the graph. The paths that can be unambiguously followed are called unitigs.
+Ambiguous paths can be solved by using coverage information or paired-end
+information. Contigs thus consist of one or multiple unitigs. Choosing the
+right kmer size is important. A shorter $k$ gives more connectivity within the
+graph and hence requires lower sequencing coverage of the genomes, but at the
+same time the risk increases that a kmer occurs multiple times within a genome,
+or in multiple genomes (hence ambiguous paths will exist). A larger $k$ can
+overcome this problem if it is larger than the multiply occurring region. But a
+larger $k$ also requires higher sequence coverage.\\
+
+
+%\subsubsection*{How the assemblers differ}
+Velvet, Ray and Meta-Velvet differ in the way the graph is traversed. Velvet,
+meant for single genomes, looks for one coverage peak in the coverage
+distribution and tries to follow that, where the main idea is that the genome
+is approximately uniformly covered. Nodes in the graph below a certain coverage
+threshold are considered errors and ones with high coverage repeats.
+Meta-Velvet looks for multiple peaks in the coverage distribution. The contigs
+of each genome should have a distinct coverage peak due to the genome copy
+number of the corresponding genome being different from the other genomes in
+the metagenome. Meta-Velvet makes use of that property. Ray looks for 'seeds'
+in the graph and extends those seeds iteratively weighting choises by the
+number of reads supporting a certain path. The seeds are unitigs in the graph
+with a specific coverage. The metagenomic update to Ray changes the seed
+selection by looking at the coverage peak in the graph locally instead of
+globally. 
+
+
+%\subsection*{Merging}
+A way to get the advantage from both short and long kmers is by merging contigs
+generated in multiple assemblies with different kmer lengths. This is possible
+with Newbler, as done by \cite{Luo22347999}, or with Minimus2, as done by for
+instance the Rnnotator pipeline \cite{Martin21106091}. Both Newbler and
+Minimus2 use an Overlap-Layout-Consensus method to merge contigs
+\cite{Sommer17324286,Miller20211242}.
+
+
+%\subsection*{Scaffolding}
+For the scaffolding procedure Bambus2 was chosen since it was one of the better
+scaffolders for single genomes in the GAGE assessment paper
+\cite{Salzberg22147368} and is suitable for metagenomes as well
+\cite{Koren21926123}. For a flow diagram of previously mentioned approaches see
+Figure \ref{fig:asmstrat}. A total of twenty-one assembly recipies from the flow
+diagram have been tested. See Table \ref{tab:asmstrat} for an overview of the
+assembly recipies, Table \ref{tab:programversions} for versions of each
+program and Table \ref{tab:asmstratparameters} for the parameters of each
+recipe.
+
+%\clearpage
+%\thispagestyle{empty}
+%\begin{figure}[ht!]
+%  \centering
+%    \includegraphics[height=\textheight]{figures/metassemble-flowchart.pdf}
+%  \caption{Assembly recipies using a combination of Velvet, Meta-Velvet, Ray, Minimus2, Newbler and Bambus2.}
+%  \label{fig:asmstrat}
+%\end{figure}
+
+%TODO Validation requires some more non-ambiguous parameters for calculating
+% the statistics and performing the mapping with MUMmer
+
+\subsection*{Validation} \label{sec:metval} The validation of a metagenomic assembly in
+case a reference metagenome is available often focuses on one or more of the
+following points:
+\begin{itemize}
+\item contig or scaffold length distribution
+\item contig/scaffold coverage of the reference metagenome
+\item chimericity of the contigs/scaffolds
+\item functional annotation accuracy
+\item phylogenetic classification accuracy
+\end{itemize}
+This study focusses on the first three points, since those are expected to
+improve the functional annotation and the phylogenetic classification.
+
+\subsubsection*{Aligning the assembly against the reference metagenome} For
+determining how well the assemblies matched the reference metagenome the
+assemblies were mapped against the reference metagenome using MUMmer 3.1
+\cite{Kurtz14759262}.  MUMmer finds maximal exact matches longer than $l$ and
+clusters them if they are no more than $g$ nucleotides apart. The alignments
+are afterwards extended for each cluster if the combined length of its matches
+is at least $c$. The alignments are extended in between the matches of the
+cluster and on the ends using a Smith-Waterman dynamic programming algorithm.
+The MUMmer package contains multiple scripts that make use of this approach.
+NUCmer (\underline{NUC}leotide MUM\underline{mer}) is a script included in the
+MUMmer package for DNA sequence alignment of a set of query contigs against a
+set of reference contigs. The command for NUCmer used was: {\em nucmer
+--maxmatch -c65 -g90 -l20}. The {\em maxmatch} parameter makes sure all exact matches
+are used, whether they are unique or not, so contigs that consist only of a
+shared region or a repetitive element will be included in the alignments as
+well. Afterwards the script {\em show-coords} was used on the resulting
+alignment file to extract information about each alignment such as its location
+in both the query and the reference, percent identity, percent similarity and
+percent of the reference and query covered. We define the purity of an
+alignment by multiply the query coverage with the identity of the alignment. The {\em purity} of
+a contig is defined as its purest alignment. An impure contig can be the result
+of a rearrangement, an indel, copy number variation, inclusion of a kmer
+stemming from another genome or inclusion of a kmer that is a sequencing
+error.\\
+
 
 % Results and Discussion can be combined.
 \section*{Results}
+In Table ?? the length statistics of the various assemblies are shown. We chose
+to show only assemblies with a kmer of 31 to keep the information consise. The
+merged recipies are based on combining kmers from 19 up to 75 with a stepsize
+of 2.
 
 % We only support three levels of headings, please do not create a heading level below \subsubsection.
-\subsection*{Subsection 1}
+\subsection*{Purity}
+Figure ?? shows the number of bases in contigs over different purity intervals
+and contig length intervals for the even community. In terms of delivering the
+least amount of impure contigs, velvetnoscaf does best. It however does not
+deliver very long contigs, raynoscaf does better at a cost of outputting more
+impure contigs. The metavelvetnoscaf recipe provides even more long contigs
+but also an even larger amount of impure contigs compared to the other two
+noscaf recipies. It becomes clear that one has to make a choice between
+length and purity when assembling by following one of these recipies. All the
+scaf recipies result in a large increase in the number of impure contigs. For
+the merging recipies with minimus2 and newbler there is very little
+difference between the two. In both cases there is an increase in contig
+lengths with a decrease in purity, but not as much as for the scaf recipies.
 
-\subsubsection*{SubSubsection 1.1}
+\subsection*{Metagenome coverage}
+The metagenome coverage of the different recipies for the even community can
+be seen in Figure ??.  The light lines are computed using only completely pure
+contigs, the dark lines using the purest alignment of every contig. This gives
+an idea of the range of the metagenome coverage when using different cut off
+values for purity. The merge recipies do the best job of increasing contig
+lengths and coverage of the metagenome. Again there are only minor differences
+between minimus2 and newbler. Newbler results in slightly purer contigs. If we
+would only look at the light lines i.e. counting only completely pure contigs
+then it would seem the merging recipe is rather bad. Therefore in Figure ??
+we plotted several different purity cutoffs for minimusvelvetnoscaf. The plot
+proves that most of the metagenome coverage is coming from only slightly impure
+contigs.
 
-\subsection*{Subsection 2}
+\subsection*{Kmer LCA analysis}
+The impurity of contig could come from rearrangements, including chimeric kmers
+and/or unknown kmers. An unknown kmer might come from an error in the
+sequencing or because the input DNA was slightly different from the reference.
+We refer to these kmers henceforth as erroneous kmers. In Figure ?? one can see
+that most of the chimeric kmers come from genomes whose LCA is either at the
+species or genus level. The sum of the chimeric kmers is larger than the number
+of kmers not stemming from any of the reference genomes. For velvetnoscaf31
+contigs with an erroneous and chimeric kmer are occuring in an approximately
+equal ratio. There are however more than double as many chimeric kmers
+indicating that a chimeric contig often has more chimeric kmers than an
+erroneous contig has erroneous kmers.
 
-\section*{Discussion}
+\subsection*{Extracting pure contigs}
+There are a plethora of ways one can postprocess a metagenomic assembly. Now
+that we have demonstrated there is quite some impurity in metagenomic
+assemblies, especially for assemblers outputting longer contigs, it would be
+ideal to get a confidence score per contig that reflects its purity without a
+reference genome. Depending on the postprocessing desired a confidence
+threshold can be chosen to only include certain contigs. We ran FRCbam and
+REAPR on the raynoscaf31 assembly. Unfortunately for both reference less
+validation tools we could not find a set of error indicators that would be an
+indication of impurity i.e. chimericity, indels, erroneousness or
+rearrangements. A very simple rule of thumb is to simply use contigs coverage
+as an indication of contig purity. In Figure ?? one can see that the pure bases
+are mostly in contigs with a high coverage mean. Figure ?? shows the relation
+between coverage mean and purity.
 
 
 
@@ -210,6 +564,7 @@ $\ast$ E-mail: Corresponding author@institute.edu
 % style file and paste the contents of your .bbl file
 % here.
 % 
+\bibliography{plos_template}
 
 \section*{Figure Legends}
 % This section is for figure legends only, do not include
@@ -221,6 +576,63 @@ $\ast$ E-mail: Corresponding author@institute.edu
 %}
 %\label{Figure_label}
 %\end{figure}
+%\begin{figure}
+%\caption{
+%{\bf Figure 1. Distribution of bases in contigs over purity and length
+%intervals for the mock community with even abundances per genome.}  Three
+%different assembly recipes are shown: velvetnoscaf31 (A), raynoscaf31 (B) and
+%metavelvetnoscaf31 (C). The velvet recipe gives the purest contigs, but they
+%are not very long. From the top panel to the bottom panel a trend can be
+%noticed: more longer conitgs are produced at a cost of purity.
+%\label{Figure_1}
+%\end{figure}
+\clearpage
+\thispagestyle{empty}
+\begin{figure}
+\centering
+\includegraphics[width=\textwidth]{figures/Figure1.eps}
+\caption{
+{\bf Figure 1. Distribution of bases in contigs over purity and length
+intervals for the mock community with even abundances per genome.}  Three
+different assembly recipes are shown: velvetnoscaf31 (A), raynoscaf31 (B) and
+metavelvetnoscaf31 (C). The velvet recipe gives the purest contigs, but they
+are not very long. From the top panel to the bottom panel a trend can be
+noticed: longer conitgs are produced at a cost of purity.}
+\label{Figure_1}
+\end{figure}
+
+\begin{figure}
+\centering
+\includegraphics[width=\textwidth]{figures/Figure2.eps}
+\caption{
+{\bf Figure 2. Distribution of bases in contigs over purity and length
+intervals for the mock community with even abundances per genome.}  Three
+different assembly recipes are shown: raynoscaf31 (A), raynoscafminimus2 (B)
+and raynoscafnewbler (C). Merging Ray assemblies over kmers 19 to 75 with a
+stepsize of 2 using Minimus2 and Newbler results in longer but impurer contigs.
+The Newbler recipe is more stringent than Minimus2.}
+\label{Figure_2}
+\end{figure}
+
+\begin{figure}
+\centering
+\includegraphics[width=0.5\textwidth]{figures/Figure_3.eps}
+\caption{
+{\bf Figure 3. LCA for each kmer that did not belong to the reference genome.}
+Three different assembly recipes are shown: velvetnoscaf31 (A), raynoscaf31 (B)
+and raynoscafnewbler (C). }
+\label{Figure_3}
+\end{figure}
+
+\begin{figure}
+\centering
+\includegraphics[width=0.5\textwidth]{figures/Figure_4.eps}
+\caption{
+{\bf Figure 4. Type of impure contigs based on Kraken analysis}
+Three different assembly recipes are shown: velvetnoscaf31 (A), raynoscaf31 (B)
+and raynoscafnewbler (C).}
+\label{Figure_3}
+\end{figure}
 
 
 \section*{Tables}
@@ -239,6 +651,38 @@ $\ast$ E-mail: Corresponding author@institute.edu
 %\end{flushleft}
 %\label{tab:label}
 % \end{table}
+\begin{table}[h!]
+\centering
+\begin{tabular}{|l|c|c|c|}
+\hline
+Assembly recipe name & Contiging & Merging & Scaffolding\\
+\hline
+velvetnoscaf & Velvet & - & -\\
+velvetscaf & Velvet & - & Velvet\\
+velvetnoscafminimus2 & Velvet & Minimus2 & -\\
+velvetnoscafnewbler & Velvet & Newbler & -\\
+velvetnoscafbambus2 & Velvet & - & Bambus2\\
+velvetnoscafminimus2bambus2 & Velvet & Minimus2 & Bambus2\\
+velvetnoscafnewblerbambus2 & Velvet & Newbler & Bambus2\\
+metavelvetnoscaf & Meta-Velvet & - & -\\
+metavelvetscaf & Meta-Velvet & - & Meta-Velvet\\
+metavelvetnoscafminimus2 & Meta-Velvet & Minimus2 & -\\
+metavelvetnoscafnewbler & Meta-Velvet & Newbler & -\\
+metavelvetnoscafbambus2 & Meta-Velvet & - & Bambus2\\
+metavelvetnoscafminimus2bambus2 & Meta-Velvet & Minimus2 & Bambus2\\
+metavelvetnoscafnewblerbambus2 & Meta-Velvet & Newbler & Bambus2\\
+raynoscaf & Ray & - & -\\
+rayscaf & Ray & - & Ray\\
+raynoscafminimus2 & Ray & Minimus2 & -\\
+raynoscafnewbler & Ray & Newbler & -\\
+raynoscafbambus2 & Ray & - & Bambus2\\
+raynoscafminimus2bambus2 & Ray & Minimus2 & Bambus2\\
+raynoscafnewblerbambus2 & Ray & Newbler & Bambus2\\
+\hline
+\end{tabular}
+\caption{Assembly recipies}
+\label{tab:asmstrat}
+\end{table}
 
 \section*{Supporting Information Legends}
 %
@@ -249,5 +693,26 @@ $\ast$ E-mail: Corresponding author@institute.edu
 %\item {\bf}
 %\item {\bf}
 %\end{description}
+\clearpage
+\thispagestyle{empty}
+\begin{figure}
+\centering
+\includegraphics[width=\textwidth]{figures/Figure_S1.eps}
+\caption{
+{\bf Figure S1. Distribution of bases in contigs over purity and length
+intervals for the mock community with even abundances per genome.}}
+\label{Figure_S1}
+\end{figure}
+
+\clearpage
+\thispagestyle{empty}
+\begin{figure}
+\centering
+\includegraphics[width=\textwidth]{figures/Figure_S2.eps}
+\caption{
+{\bf Figure S2. Distribution of bases in contigs over purity and length
+intervals for the mock community with even abundances per genome.}}
+\label{Figure_S2}
+\end{figure}
 
 \end{document}
